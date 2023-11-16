@@ -3,6 +3,13 @@ GooseDBMS. Free cloud DBMS based on Google products
 
 GooseDMBS was created to get around the problem of building cloud database-based applications. The data entry takes place through the automatic sending of a Google form. The solution is particularly useful for all those push only applications such as MQTT or one-way communications (weather stations, IoT devices, sending status data, ...). The entire solution does not require writing specific code but only configuring a file.
 
+## Usings
+```c#
+using Goose;
+using Goose.Type.Config;
+using Goose.Type.DBMS;
+```
+
 ## Configuration file
 Consider the following configuration file
 ```json
@@ -61,14 +68,14 @@ Pay attention that in GooseDBMS, **every form is a table**. When the ```goose_co
 ## Client application
 In the case of client application, the user can only just push data to DB. So, ```ClientSecretFilePath``` and ```FormID``` should be null and just ```PrefilledFormID``` will be used to create the link to push data.
 ```c#
-GooseDBMS gooseDBMS = new("goose_config_new.json");  //instance of GooseDBMS
+DBMS gooseDBMS = new("goose_config_new.json");  //instance of GooseDBMS
 gooseDBMS.Insert("tablename", new List<string>() { "colum1 value", "column2 value" });  //this equivalent to: INSERT INTO tablename (name, surname) VALUES ('column1 value', 'column2 value')
 ```
 
 ## Server application
 In the case of server application or master application, the user is able to push and pull data to DB. So ```ClientSecretFilePath``` and ```FormID``` must be not null and valid to create a Google service able to read form body and responses. In any case, the **data entered into the database cannot be modified** in form response but **soon there will be the possibility of replacing previous data with updated data so as to also implement the update functionality as in a real database**.
 ```c#
-GooseDBMS gooseDBMS = new("goose_config_new.json");  //instance of GooseDBMS
+DBMS gooseDBMS = new("goose_config_new.json");  //instance of GooseDBMS
 gooseDBMS.Insert("tablename", new List<string>() { "colum1 value", "column2 value" });  //this equivalent to: INSERT INTO tablename (name, surname) VALUES ('column1 value', 'column2 value')
 GooseTable? gooseTable = gooseDBMS.Select("SELECT * FROM tablename WHERE name = 'some name value'");  //literally the sql SELECT statement
 

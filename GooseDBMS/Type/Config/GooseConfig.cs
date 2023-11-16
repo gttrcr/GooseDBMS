@@ -8,7 +8,7 @@ using System.Collections.Specialized;
 
 namespace Goose.Type.Config
 {
-    class GooseConfig
+    public class GooseConfig
     {
         public string? ClientSecretFilePath { get; set; }
         public List<Table> Tables { get; set; }
