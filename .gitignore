@@ -1,0 +1,4 @@
+*.json
+*/obj/*
+*/bin/*
+*/goose.db
