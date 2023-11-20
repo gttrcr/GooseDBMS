@@ -8,12 +8,12 @@ using System.Collections.Specialized;
 
 namespace Goose.Type.Config
 {
-    public class GooseConfig
+    public class Config
     {
         public string? ClientSecretFilePath { get; set; }
         public List<Table> Tables { get; set; }
 
-        public GooseConfig()
+        public Config()
         {
             Tables = new();
         }
@@ -28,7 +28,7 @@ namespace Goose.Type.Config
                 throw new Exception("There are some invalid url: " + Environment.NewLine + string.Join(Environment.NewLine, invalidUrl));
             List<Uri> prefilledUris = prefilledUrls.Select(x => new Uri(x)).ToList();
 
-            GooseConfig gooseConfig = new()
+            Config gooseConfig = new()
             {
                 ClientSecretFilePath = clientSecretFilePath
             };

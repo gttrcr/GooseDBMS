@@ -1,28 +1,23 @@
-using System.Collections.Specialized;
 using System.Data;
-using System.Reflection;
-using System.Web;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Forms.v1;
-using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using Newtonsoft.Json;
 using System.Data.SQLite;
 using Goose.Type.DBMS;
 using Goose.Type.Config;
+using System.Collections.Specialized;
+using System.Web;
 
 namespace Goose
 {
     public class DBMS
     {
-        private GooseConfig DBConfig { get; set; }
-        private FormsService FormsService { get; set; }
-        // public SheetsService SheetsService { get; private set; }
-
-        public delegate void DataReceivedDelegate(GooseDB gooseDB, GooseDB previousGooseDB, GooseDB differenceGooseDB);
-        public DataReceivedDelegate? DataReceivedCallback;
-
-        private GooseDB? GooseDB { get; set; }
+        protected Config DBConfig { get; set; }
+        protected FormsService FormsService { get; set; }
+        // protected SheetsService SheetsService { get; private set; }
+        protected static SQLiteConnection? SQLite { get; set; }
+        protected GooseDB? GooseDB { get; set; }
 
         public static UserCredential? Credential(string? clientSecretFilePath, string[] scopes)
         {
@@ -37,60 +32,12 @@ namespace Goose
             return credential;
         }
 
-        private void DataReceivedService()
-        {
-            GooseDB previousGooseDB = new();
-            while (true)
-            {
-                Thread.Sleep(2000);
-                GooseDB = new(FormsService.Forms, DBConfig.Tables);
-                UpdateLocalDB();
-                GooseDB? differenceGooseDB = GooseDB.Compare(previousGooseDB);
-                if (differenceGooseDB != null)
-                    DataReceivedCallback?.Invoke(GooseDB, previousGooseDB, differenceGooseDB);
-                previousGooseDB = GooseDB;
-            }
-        }
-
-        private static SQLiteConnection? SQLite { get; set; }
-
-        private void UpdateLocalDB()
-        {
-            if (SQLite == null)
-            {
-                SQLite = new SQLiteConnection("Data Source=goose.db;Version=3;New=True;Compress=True;");
-                SQLite.Open();
-            }
-
-            GooseDB?.Tables.ForEach(x =>
-            {
-                SQLiteCommand command;
-                string query = string.Join(", ", x.Table.Columns.Select(y => y.Value + " VARCHAR(1000)"));
-                query = "CREATE TABLE IF NOT EXISTS " + x.Table.Name + " (GooseID VARCHAR(1000) PRIMARY KEY" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) + ")";
-                command = SQLite.CreateCommand();
-                command.CommandText = query;
-                command.ExecuteNonQuery();
-
-                x.Rows.ForEach(y =>
-                {
-                    query = string.Join(", ", y.Cells.Select(z => z.Key.Value));
-                    query = "INSERT INTO " + x.Table.Name + " (GooseID" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) +
-                    ") VALUES ('" + y.RowID + "'" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + string.Join(", ", y.Cells.Select(z => "'" + z.Value + "'")))
-                    + ") ON CONFLICT(GooseID) DO NOTHING";
-
-                    command = SQLite.CreateCommand();
-                    command.CommandText = query;
-                    command.ExecuteNonQuery();
-                });
-            });
-        }
-
         public DBMS(string configJson)
         {
             if (!File.Exists(configJson))
                 throw new Exception("Cannot find file " + configJson);
 
-            GooseConfig? obj = JsonConvert.DeserializeObject<GooseConfig>(File.ReadAllText(configJson)) ?? throw new Exception("The configuration file " + configJson + " is null");
+            Config? obj = JsonConvert.DeserializeObject<Config>(File.ReadAllText(configJson)) ?? throw new Exception("The configuration file " + configJson + " is null");
             if (obj.Tables.Count == 0)
                 throw new Exception("Empty table list. Key is Tables");
 
@@ -118,39 +65,33 @@ namespace Goose
             if (tablesWithNullOrEmptyPrefilledFormID.Count > 0)
                 throw new Exception("PrefilledFormID is null or empty in tables " + string.Join(", ", tablesWithNullOrEmptyPrefilledFormID.Select(x => x.Name)));
 
-            List<Table> tablesWithNullorEmptyFormID = obj.Tables.Where(x => string.IsNullOrEmpty(x.FormID)).ToList();
-            if (obj.ClientSecretFilePath != null && tablesWithNullorEmptyFormID.Count > 0)
-                throw new Exception("When ClientSecretFilePath is set, FormID of tables " + string.Join(", ", tablesWithNullorEmptyFormID.Select(x => x.Name)) + " must be set too");
-
             DBConfig = obj;
+            FormsService = new();
             GooseDB = null;
+        }
 
-            FormsService = new(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = Credential(DBConfig.ClientSecretFilePath, new[]
-                {
-                    FormsService.Scope.FormsResponsesReadonly,
-                    FormsService.Scope.FormsBody,
-                }),
-                ApplicationName = Assembly.GetExecutingAssembly().GetName().Name,
-            });
+        //Block the main thread forever
+        public static void Block()
+        {
+            while (true)
+                Thread.Sleep(int.MaxValue);
+        }
 
-            // SheetsService = new(new BaseClientService.Initializer()
-            // {
-            //     HttpClientInitializer = Credential(DBConfig.ClientSecretFilePath, new[]
-            //     {
-            //         SheetsService.Scope.Spreadsheets,
-            //     }),
-            //     ApplicationName = Assembly.GetExecutingAssembly().GetName().Name,
-            // });
+        //Insert a record in tableName based on a dictionary of values
+        public bool Insert(string tableName, Dictionary<string, string> columns)
+        {
+            Table? t = DBConfig.Tables.Find(x => x.Name.Equals(tableName)) ?? throw new Exception("Cannot find table " + tableName);
+            List<string> columnsNamePassed = columns.Keys.ToList();
+            List<string> columnsNameConfigured = t.Columns.Select(x => x.Value).ToList();
+            List<string> columnsNameWithoutDefinition = columnsNamePassed.Except(columnsNameConfigured).ToList();
+            if (columnsNameWithoutDefinition.Count > 0)
+                throw new Exception("Columns " + string.Join(" ", columnsNameWithoutDefinition) + " are not defined for table " + tableName);
 
-            DataReceivedCallback = null;
-            if (FormsService.HttpClientInitializer != null)
-            {
-                GooseDB = new(FormsService.Forms, DBConfig.Tables);
-                UpdateLocalDB();
-                new Thread(DataReceivedService) { IsBackground = true }.Start();
-            }
+            List<string> columnToInsert = new();
+            for (int i = 0; i < columnsNameConfigured.Count; i++)
+                columnToInsert.Add(columnsNamePassed.Contains(columnsNameConfigured[i]) ? columns[columnsNameConfigured[i]] : string.Empty);
+
+            return Insert(tableName, columnToInsert);
         }
 
         //Insert a record in tableName based on all columns value
@@ -172,95 +113,6 @@ namespace Goose
 
             uriBuilder.Query = query.ToString();
             return Http.Get(uriBuilder.ToString(), out string content);
-        }
-
-        //Insert a record in tableName based on a dictionary of values
-        public bool Insert(string tableName, Dictionary<string, string> columns)
-        {
-            Table? t = DBConfig.Tables.Find(x => x.Name.Equals(tableName)) ?? throw new Exception("Cannot find table " + tableName);
-            List<string> columnsNamePassed = columns.Keys.ToList();
-            List<string> columnsNameConfigured = t.Columns.Select(x => x.Value).ToList();
-            List<string> columnsNameWithoutDefinition = columnsNamePassed.Except(columnsNameConfigured).ToList();
-            if (columnsNameWithoutDefinition.Count > 0)
-                throw new Exception("Columns " + string.Join(" ", columnsNameWithoutDefinition) + " are not defined for table " + tableName);
-
-            List<string> columnToInsert = new();
-            for (int i = 0; i < columnsNameConfigured.Count; i++)
-                columnToInsert.Add(columnsNamePassed.Contains(columnsNameConfigured[i]) ? columns[columnsNameConfigured[i]] : string.Empty);
-
-            return Insert(tableName, columnToInsert);
-        }
-
-        public GooseTable? Select(string query)
-        {
-            if (SQLite == null)
-                return null;
-
-            SQLiteCommand command = SQLite.CreateCommand();
-            command.CommandText = query;
-            SQLiteDataReader select = command.ExecuteReader();
-
-            List<GooseRow> rows = new();
-            while (select.Read())
-            {
-                Dictionary<Column, string?> dictionary = new();
-                for (int i = 0; i < select.FieldCount; i++)
-                {
-                    object value = select.GetValue(i);
-                    dictionary.Add(new Column(0, select.GetName(i), string.Empty), value.GetType().Equals(typeof(DBNull)) ? string.Empty : value.ToString());
-                }
-                rows.Add(new(Guid.NewGuid().ToString(), dictionary));
-            }
-
-            Table table = new()
-            {
-                Name = query
-            };
-            for (int i = 0; i < select.FieldCount; i++)
-                table.Columns.Add(new Column(0, select.GetName(i), string.Empty));
-
-            return new(table, rows);
-
-            // // if (t != null)
-            // // {
-            // // string code = @"
-            // //     t.
-            // // ";
-
-            // // // string whereStatenent = string.Join(".", where.Select(x => "Where(x=>" + x + ")"));
-            // // // code = code.Replace("#", whereStatenent);
-            // // ScriptOptions scriptOptions = ScriptOptions.Default.AddReferences(typeof(System.Linq.Enumerable).Assembly.Location);
-            // // scriptOptions = scriptOptions.AddImports("System.Linq");
-            // // Script script = CSharpScript.Create<GooseTable>(code, scriptOptions, typeof(SelectObject));
-
-            // // Mutex.WaitOne();
-            // // // object result = script.RunAsync(new SelectObject()
-            // // // {
-            // // //     GooseDB = GooseDB,
-            // // //     From = from
-            // // // }).Result.ReturnValue;
-            // // List<(string, List<(string, string?)>)> test = t.Rows.Select(x => (x.RowID, x.Cells.Select(x => (x.Key.Value, x.Value)).ToList())).ToList();
-
-            // GooseTable? t = GooseDB?.Tables.FirstOrDefault(x => x.Table.Name.Equals(from));
-            // List<GooseRow>? rows = t?.Rows?.Select(x => new GooseRow(x.RowID, x.Cells.Where(y =>
-            // {
-            //     bool filter = select.Count > 0 && select[0] == "*";
-            //     for (int i = 0; i < select.Count; i++)
-            //         filter |= y.Key.Value.Equals(select[i]);
-            //     return filter;
-            // }).ToDictionary(y => y.Key, y => y.Value))).ToList();
-
-            // if (rows != null)
-            //     t = new(rows);
-
-            // return t;
-        }
-
-        //Block the main thread forever
-        public static void Block()
-        {
-            while (true)
-                Thread.Sleep(int.MaxValue);
         }
     }
 }

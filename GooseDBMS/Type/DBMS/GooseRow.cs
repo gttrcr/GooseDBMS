@@ -6,7 +6,7 @@ namespace Goose.Type.DBMS
     public class GooseRow
     {
         public string RowID { get; private set; }
-        public Dictionary<Column, string?> Cells { get; private set; }
+        public Dictionary<string, string?> Cells { get; private set; }
 
         public GooseRow(FormResponse formResponse, List<Column> columns)
         {
@@ -14,12 +14,12 @@ namespace Goose.Type.DBMS
             RowID = formResponse.ResponseId;
             formResponse.Answers.ToList().ForEach(x =>
             {
-                Column? column = columns.FirstOrDefault(y => y.Key.Equals(x.Key)) ?? throw new Exception("Columns with key [" + string.Join(", ", x.Key) + "] have no definition");
-                Cells.Add(column, x.Value.TextAnswers.Answers.First().Value);
+                // Column? column = columns.FirstOrDefault(y => y.Key.Equals(x.Key)) ?? throw new Exception("Columns with key [" + string.Join(", ", x.Key) + "] have no definition");
+                Cells.Add(columns.First(y => y.Key.Equals(x.Value.QuestionId)).Value, x.Value.TextAnswers.Answers.First().Value);
             });
         }
 
-        public GooseRow(string rowID, Dictionary<Column, string?> cells)
+        public GooseRow(string rowID, Dictionary<string, string?> cells)
         {
             RowID = rowID;
             Cells = new(cells);
