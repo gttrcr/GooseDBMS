@@ -21,7 +21,7 @@ namespace Goose.Type.DBMS
 
             Table = new(t);
             Rows = new();
-            listFormResponsesResponse.Responses.ToList().ForEach(x => Rows.Add(new(x, t.Columns)));
+            listFormResponsesResponse.Responses?.ToList().ForEach(x => Rows.Add(new(x, t.Columns)));
         }
 
         public GooseTable(Table table, List<GooseRow> rows)
@@ -101,14 +101,12 @@ namespace Goose.Type.DBMS
 
         public override string ToString()
         {
-            string str = "Name: " + Table.Name + Environment.NewLine;
-            str += "FormID: " + Table.FormID + Environment.NewLine;
-            str += "PrefilledformID: " + Table.PrefilledFormID + Environment.NewLine;
-            str += "SpreadsheetID: " + Table.SpreadsheetID + Environment.NewLine;
-            str += "Columns: " + Environment.NewLine;
-            Table.Columns.ForEach(x => str += "\t" + x + Environment.NewLine);
-            str += "Data: " + Environment.NewLine;
-            Rows.ForEach(x => str += x + Environment.NewLine);
+            string str = Table.Name.DoNotPrint(string.Empty, "Name: ", Environment.NewLine);
+            str += Table.FormID.DoNotPrint(null, "FormID: ", Environment.NewLine);
+            str += Table.PrefilledFormID.DoNotPrint(null, "PrefilledformID: ", Environment.NewLine);
+            str += Table.SpreadsheetID.DoNotPrint(null, "SpreadsheetID: ", Environment.NewLine);
+            str += Table.Columns.Count > 0 ? "Columns: " + Environment.NewLine + string.Join(Environment.NewLine, Table.Columns) + Environment.NewLine : string.Empty;
+            str += string.Join(Environment.NewLine, Rows);
             return str;
         }
     }

@@ -14,7 +14,7 @@ using Goose.Type.Config;
 using Goose.Type.DBMS;
 ```
 
-## Configuration file
+## Example of goose.json Configuration file
 Consider the following configuration file
 ```json
 {

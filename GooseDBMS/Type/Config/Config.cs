@@ -11,6 +11,7 @@ namespace Goose.Type.Config
     public class Config
     {
         public string? ClientSecretFilePath { get; set; }
+        public string? ApiKey { get; set; }
         public List<Table> Tables { get; set; }
 
         public Config()
@@ -54,11 +55,21 @@ namespace Goose.Type.Config
                 NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
                 nvc.Remove("usp");
 
-                if (nvc.Count != form.Items.Count)
-                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + ") must be the same as the number of items in form (" + form.Items.Count + ")");
+                IList<Item> filteredByProperties = form.Items.Where(x => x.PageBreakItem == null && x.QuestionItem != null).ToList();
+                if (nvc.Count != filteredByProperties.Count)
+                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + ") must be the same as the number of filtered items in form (" + filteredByProperties.Count + ")");
 
-                for (int j = 0; j < form.Items.Count; j++)
-                    table.Columns.Add(new(int.Parse(nvc.Keys[j].Split('.')[1]), nvc[nvc.Keys[j]], form.Items[j].QuestionItem.Question.QuestionId));
+                for (int j = 0; j < filteredByProperties.Count; j++)
+                {
+                    string? key = nvc.Keys[j];
+                    string? value = nvc[key];
+                    if (key == null)
+                        throw new Exception("Key is null in the array of prefilled arguments");
+                    else if (value == null)
+                        throw new Exception("Value is null in the array of prefilled arguments");
+                    else
+                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value, filteredByProperties[j].QuestionItem.Question.QuestionId));
+                }
 
                 gooseConfig.Tables.Add(table);
             }

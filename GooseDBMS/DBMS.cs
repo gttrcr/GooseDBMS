@@ -24,11 +24,13 @@ namespace Goose
             if (clientSecretFilePath == null)
                 return null;
 
-            using FileStream stream = new(clientSecretFilePath, FileMode.Open, FileAccess.Read);
+            FileStream stream = new(clientSecretFilePath, FileMode.Open, FileAccess.Read);
             string credPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             credPath = Path.Combine(credPath, ".credentials/google-dotnet-quickstart.json");
             Console.WriteLine("Credential file saved to: " + credPath);
             UserCredential credential = GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.FromStream(stream).Secrets, scopes, "user", CancellationToken.None, new FileDataStore(credPath, true)).Result;
+            stream.Close();
+            stream.Dispose();
             return credential;
         }
 

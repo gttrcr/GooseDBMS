@@ -2,7 +2,7 @@ namespace Goose.Type.Config
 {
     public class Column
     {
-        public int Entry { get; set; }
+        public long Entry { get; set; }
         public string Value { get; set; }
         public string Key { get; set; }
 
@@ -13,7 +13,7 @@ namespace Goose.Type.Config
             Key = string.Empty;
         }
 
-        public Column(int entry, string value, string key)
+        public Column(long entry, string value, string key)
         {
             Entry = entry;
             Value = value;
