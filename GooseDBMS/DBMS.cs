@@ -15,7 +15,6 @@ namespace Goose
     {
         protected Config DBConfig { get; set; }
         protected FormsService FormsService { get; set; }
-        // protected SheetsService SheetsService { get; private set; }
         protected static SQLiteConnection? SQLite { get; set; }
         protected GooseDB? GooseDB { get; set; }
 

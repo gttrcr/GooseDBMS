@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GooseDBMS" Version="1.3.11" />
+    <PackageReference Include="GooseDBMS" Version="1.3.18" />
   </ItemGroup>
 
 </Project>

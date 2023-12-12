@@ -26,21 +26,6 @@ namespace Goose.Type.DBMS
         public GooseDB? Compare(GooseDB gooseDB)
         {
             GooseDB? differenceGooseSchema = null;
-
-            List<string?> addedFormID = Tables.Select(x => x.Table.FormID).Except(gooseDB.Tables.Select(x => x.Table.FormID)).ToList();
-            if (addedFormID.Count > 0)
-            {
-                differenceGooseSchema ??= new();
-                differenceGooseSchema.Tables.AddRange(Tables.Where(x => addedFormID.Contains(x.Table.FormID)));
-            }
-
-            List<string?> removedFormID = gooseDB.Tables.Select(x => x.Table.FormID).Except(Tables.Select(x => x.Table.FormID)).ToList();
-            if (removedFormID.Count > 0)
-            {
-                differenceGooseSchema ??= new();
-                differenceGooseSchema.Tables.AddRange(Tables.Where(x => removedFormID.Contains(x.Table.FormID)));
-            }
-
             for (int i = 0; i < gooseDB.Tables.Count; i++)
             {
                 GooseTable? differenceTable = Tables[i].Compare(gooseDB.Tables.First(x => x.Table.FormID.Equals(Tables[i].Table.FormID)));

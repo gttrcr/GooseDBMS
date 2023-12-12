@@ -1,5 +1,3 @@
-using System.CodeDom;
-
 namespace Goose
 {
     public static class Extensions

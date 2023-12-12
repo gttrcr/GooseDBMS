@@ -56,7 +56,7 @@ namespace Goose
             GooseDB?.Tables.ForEach(x =>
             {
                 SQLiteCommand command;
-                string query = string.Join(", ", x.Table.Columns.Select(y => y.Value.Underscore() + " VARCHAR(1000)"));
+                string query = string.Join(", ", x.Table.Columns.Select(y => y.Value + " VARCHAR(1000)"));
                 query = "CREATE TABLE IF NOT EXISTS " + x.Table.Name.Underscore() + " (GooseID VARCHAR(1000) PRIMARY KEY" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) + ")";
                 command = SQLite.CreateCommand();
                 command.CommandText = query;
@@ -65,7 +65,7 @@ namespace Goose
                 x.Rows.ForEach(y =>
                 {
                     query = string.Join(", ", y.Cells.Select(z => z.Key.Underscore()));
-                    query = "INSERT INTO " + x.Table.Name.Underscore() + " (GooseID" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) +
+                    query = "INSERT INTO " + x.Table.Name + " (GooseID" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) +
                     ") VALUES ('" + y.RowID + "'" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + string.Join(", ", y.Cells.Select(z => "'" + z.Value + "'")))
                     + ") ON CONFLICT(GooseID) DO NOTHING";
 
@@ -91,7 +91,7 @@ namespace Goose
             }
         }
 
-        public GooseTable? Select(string query)
+        public static GooseTable? Select(string query)
         {
             if (SQLite == null)
                 return null;

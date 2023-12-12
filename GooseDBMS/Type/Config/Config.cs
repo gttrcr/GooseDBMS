@@ -29,10 +29,7 @@ namespace Goose.Type.Config
                 throw new Exception("There are some invalid url: " + Environment.NewLine + string.Join(Environment.NewLine, invalidUrl));
             List<Uri> prefilledUris = prefilledUrls.Select(x => new Uri(x)).ToList();
 
-            Config gooseConfig = new()
-            {
-                ClientSecretFilePath = clientSecretFilePath
-            };
+            Config gooseConfig = new() { ClientSecretFilePath = clientSecretFilePath };
 
             for (int i = 0; i < prefilledUris.Count; i++)
             {
@@ -50,7 +47,7 @@ namespace Goose.Type.Config
                 });
 
                 Form form = formsService.Forms.Get(table.FormID).Execute();
-                table.Name = form.Info.Title;
+                table.Name = form.Info.Title.Underscore();
 
                 NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
                 nvc.Remove("usp");
@@ -68,7 +65,7 @@ namespace Goose.Type.Config
                     else if (value == null)
                         throw new Exception("Value is null in the array of prefilled arguments");
                     else
-                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value, filteredByProperties[j].QuestionItem.Question.QuestionId));
+                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value.Underscore(), filteredByProperties[j].QuestionItem.Question.QuestionId));
                 }
 
                 gooseConfig.Tables.Add(table);

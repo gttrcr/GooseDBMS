@@ -16,7 +16,7 @@ namespace Goose.Type.DBMS
 
         public GooseTable(ListFormResponsesResponse listFormResponsesResponse, Form form, Table t)
         {
-            if (form.Info.Title != t.Name)
+            if (!form.Info.Title.Underscore().Equals(t.Name))
                 throw new Exception("Form title [" + form.Info.Title + "] is different from associated table name [" + t.Name + "]");
 
             Table = new(t);
@@ -33,55 +33,6 @@ namespace Goose.Type.DBMS
         public GooseTable? Compare(GooseTable gooseTable)
         {
             GooseTable? differenceGooseTable = null;
-            if (Table.Name != gooseTable.Table.Name)
-            {
-                differenceGooseTable ??= new();
-                differenceGooseTable.Table.Name = Table.Name;
-            }
-            if (Table.PrefilledFormID != gooseTable.Table.PrefilledFormID)
-            {
-                differenceGooseTable ??= new();
-                differenceGooseTable.Table.PrefilledFormID = Table.PrefilledFormID;
-            }
-            if (Table.SpreadsheetID != gooseTable.Table.SpreadsheetID)
-            {
-                differenceGooseTable ??= new();
-                differenceGooseTable.Table.SpreadsheetID = Table.SpreadsheetID;
-            }
-
-            List<string> addedColumns = Table.Columns.Select(x => x.Key).Except(gooseTable.Table.Columns.Select(x => x.Key)).ToList();
-            if (addedColumns.Count > 0)
-            {
-                differenceGooseTable ??= new();
-                differenceGooseTable.Table.Columns.AddRange(Table.Columns.Where(x => addedColumns.Contains(x.Key)));
-            }
-
-            List<string> removedColumns = gooseTable.Table.Columns.Select(x => x.Key).Except(Table.Columns.Select(x => x.Key)).ToList();
-            if (removedColumns.Count > 0)
-            {
-                differenceGooseTable ??= new();
-                differenceGooseTable.Table.Columns.AddRange(gooseTable.Table.Columns.Where(x => removedColumns.Contains(x.Key)));
-            }
-
-            for (int i = 0; i < Table.Columns.Count; i++)
-            {
-                Column column = gooseTable.Table.Columns.First(x => x.Key.Equals(Table.Columns[i].Key));
-                Column? differenceColumn = null;
-                if (column.Entry != Table.Columns[i].Entry)
-                {
-                    differenceColumn ??= new();
-                    differenceColumn.Entry = Table.Columns[i].Entry;
-                }
-                if (column.Value != Table.Columns[i].Value)
-                {
-                    differenceColumn ??= new();
-                    differenceColumn.Value = Table.Columns[i].Value;
-                }
-
-                if (differenceColumn != null)
-                    differenceGooseTable?.Table.Columns.Add(differenceColumn);
-            }
-
             List<string>? addedRows = Rows.Select(x => x.RowID).Except(gooseTable.Rows.Select(x => x.RowID)).ToList();
             if (addedRows.Count > 0)
             {
@@ -96,7 +47,7 @@ namespace Goose.Type.DBMS
                 differenceGooseTable.Rows.AddRange(gooseTable.Rows.Where(x => removedRows.Contains(x.RowID)));
             }
 
-            return differenceGooseTable;
+            return differenceGooseTable == null ? null : new(gooseTable.Table, differenceGooseTable.Rows);
         }
 
         public override string ToString()
@@ -104,7 +55,6 @@ namespace Goose.Type.DBMS
             string str = Table.Name.DoNotPrint(string.Empty, "Name: ", Environment.NewLine);
             str += Table.FormID.DoNotPrint(null, "FormID: ", Environment.NewLine);
             str += Table.PrefilledFormID.DoNotPrint(null, "PrefilledformID: ", Environment.NewLine);
-            str += Table.SpreadsheetID.DoNotPrint(null, "SpreadsheetID: ", Environment.NewLine);
             str += Table.Columns.Count > 0 ? "Columns: " + Environment.NewLine + string.Join(Environment.NewLine, Table.Columns) + Environment.NewLine : string.Empty;
             str += string.Join(Environment.NewLine, Rows);
             return str;

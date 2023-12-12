@@ -6,7 +6,7 @@ namespace Goose.Type.Config
         public List<Column> Columns { get; set; }
         public string? FormID { get; set; }
         public string? PrefilledFormID { get; set; }
-        public string? SpreadsheetID { get; set; }
+        public dynamic? Dynamic { get; set; }
 
         public Table()
         {
@@ -20,7 +20,7 @@ namespace Goose.Type.Config
             Columns = t.Columns;
             FormID = t.FormID;
             PrefilledFormID = t.PrefilledFormID;
-            SpreadsheetID = t.SpreadsheetID;
+            Dynamic = t.Dynamic;
         }
     }
 }
