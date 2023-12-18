@@ -114,7 +114,7 @@ namespace Goose
 
             Table table = new() { Name = query };
             for (int i = 0; i < select.FieldCount; i++)
-                table.Columns.Add(new Column(0, select.GetName(i), string.Empty));
+                table.Columns.Add(new Column(0, select.GetName(i), string.Empty, string.Empty));
 
             return new(table, rows);
         }

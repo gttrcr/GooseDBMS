@@ -65,7 +65,7 @@ namespace Goose.Type.Config
                     else if (value == null)
                         throw new Exception("Value is null in the array of prefilled arguments");
                     else
-                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value.Underscore(), filteredByProperties[j].QuestionItem.Question.QuestionId));
+                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value.Underscore(), filteredByProperties[j].QuestionItem.Question.QuestionId, string.Empty));
                 }
 
                 gooseConfig.Tables.Add(table);
