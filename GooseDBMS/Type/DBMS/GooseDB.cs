@@ -28,7 +28,7 @@ namespace Goose.Type.DBMS
             GooseDB? differenceGooseSchema = null;
             for (int i = 0; i < gooseDB.Tables.Count; i++)
             {
-                GooseTable? differenceTable = Tables[i].Compare(gooseDB.Tables.First(x => x.Table.FormID.Equals(Tables[i].Table.FormID)));
+                GooseTable? differenceTable = Tables[i].Compare(gooseDB.Tables.First(x => x.Table.FormID != null && x.Table.FormID.Equals(Tables[i].Table.FormID)));
                 if (differenceTable != null)
                 {
                     differenceGooseSchema ??= new();

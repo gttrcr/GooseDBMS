@@ -70,7 +70,7 @@ namespace Goose.Type.Config
 
                 gooseConfig.Tables.Add(table);
             }
-
+            
             File.WriteAllText(configJson, JsonConvert.SerializeObject(gooseConfig, Formatting.Indented));
         }
     }
