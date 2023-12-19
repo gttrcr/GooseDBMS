@@ -19,10 +19,10 @@ namespace Goose.Type.Config
             Tables = new();
         }
 
-        public static void CreateConfig(string configJson, string clientSecretFilePath, List<string> prefilledUrls, List<string> formIDs)
+        public static void CreateConfig(string configJson, string clientSecretFilePath, List<string> prefilledUrls, List<string> formIDs, List<List<string>> Exports)
         {
-            if (prefilledUrls.Count != formIDs.Count)
-                throw new Exception("The number of prefilled urls (" + prefilledUrls.Count + ") must be the same as the number of forms (" + formIDs.Count + ")");
+            if (new List<int>() { prefilledUrls.Count, formIDs.Count, Exports.Count }.Distinct().Count() != 1)
+                throw new Exception("The number of prefilled urls (" + prefilledUrls.Count + "), formIDs (" + formIDs.Count + ") and Exports (" + Exports.Count + ") must be the same");
 
             List<string> invalidUrl = prefilledUrls.Where(x => !Uri.TryCreate(x, UriKind.RelativeOrAbsolute, out Uri? uri)).ToList();
             if (invalidUrl.Count > 0)
@@ -53,8 +53,8 @@ namespace Goose.Type.Config
                 nvc.Remove("usp");
 
                 IList<Item> filteredByProperties = form.Items.Where(x => x.PageBreakItem == null && x.QuestionItem != null).ToList();
-                if (nvc.Count != filteredByProperties.Count)
-                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + ") must be the same as the number of filtered items in form (" + filteredByProperties.Count + ")");
+                if (new List<int>() { nvc.Count, filteredByProperties.Count, Exports[i].Count }.Distinct().Count() != 1)
+                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + "), filtered items in form (" + filteredByProperties.Count + ") and Exports in Exports (" + Exports[i].Count + ") must be the same");
 
                 for (int j = 0; j < filteredByProperties.Count; j++)
                 {
@@ -65,12 +65,12 @@ namespace Goose.Type.Config
                     else if (value == null)
                         throw new Exception("Value is null in the array of prefilled arguments");
                     else
-                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value.Underscore(), filteredByProperties[j].QuestionItem.Question.QuestionId, string.Empty));
+                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value.Underscore(), filteredByProperties[j].QuestionItem.Question.QuestionId, Exports[i][j]));
                 }
 
                 gooseConfig.Tables.Add(table);
             }
-            
+
             File.WriteAllText(configJson, JsonConvert.SerializeObject(gooseConfig, Formatting.Indented));
         }
     }
