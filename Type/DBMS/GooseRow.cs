@@ -14,8 +14,9 @@ namespace Goose.Type.DBMS
             RowID = formResponse.ResponseId;
             formResponse.Answers.ToList().ForEach(x =>
             {
-                // Column? column = columns.FirstOrDefault(y => y.Key.Equals(x.Key)) ?? throw new Exception("Columns with key [" + string.Join(", ", x.Key) + "] have no definition");
-                Cells.Add(columns.First(y => y.Key.Equals(x.Value.QuestionId)).Value, x.Value.TextAnswers.Answers.First().Value);
+                Column? column = columns.FirstOrDefault(y => y.Key.Equals(x.Value.QuestionId));
+                if (column != null)
+                    Cells.Add(column.Value, x.Value.TextAnswers.Answers.First().Value);
             });
         }
 

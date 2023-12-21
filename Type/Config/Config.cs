@@ -53,10 +53,10 @@ namespace Goose.Type.Config
                 nvc.Remove("usp");
 
                 IList<Item> filteredByProperties = form.Items.Where(x => x.PageBreakItem == null && x.QuestionItem != null).ToList();
-                if (new List<int>() { nvc.Count, filteredByProperties.Count, Exports[i].Count }.Distinct().Count() != 1)
-                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + "), filtered items in form (" + filteredByProperties.Count + ") and Exports in Exports (" + Exports[i].Count + ") must be the same");
+                if (new List<int>() { nvc.Count, Exports[i].Count }.Distinct().Count() != 1)
+                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + ") and Exports in Exports (" + Exports[i].Count + ") must be the same");
 
-                for (int j = 0; j < filteredByProperties.Count; j++)
+                for (int j = 0; j < nvc.Count; j++)
                 {
                     string? key = nvc.Keys[j];
                     string? value = nvc[key];

@@ -49,6 +49,9 @@ namespace Goose
         {
             if (SQLite == null)
             {
+                if (File.Exists("goose.db"))
+                    File.Delete("goose.db");
+                
                 SQLite = new SQLiteConnection("Data Source=goose.db;Version=3;New=True;Compress=True;");
                 SQLite.Open();
             }

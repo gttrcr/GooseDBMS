@@ -5,19 +5,15 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.4.11</Version>
+    <Version>1.4.14</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\"/>
-    <PackageReference Include="Google.Apis.Forms.v1" Version="1.63.0.2807" />
-    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.63.0.3148" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Google.Apis.Forms.v1" Version="1.64.0.2807" />
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.64.0.3148" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
   </ItemGroup>
