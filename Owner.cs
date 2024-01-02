@@ -31,7 +31,7 @@ namespace Goose
                     HttpClientInitializer = Credential(DBConfig.ClientSecretFilePath, new[]
                     {
                         FormsService.Scope.FormsResponsesReadonly,
-                        FormsService.Scope.FormsBody,
+                        FormsService.Scope.FormsBody
                     }),
                     ApplicationName = Assembly.GetExecutingAssembly().GetName().Name,
                 });
@@ -51,7 +51,7 @@ namespace Goose
             {
                 if (File.Exists("goose.db"))
                     File.Delete("goose.db");
-                
+
                 SQLite = new SQLiteConnection("Data Source=goose.db;Version=3;New=True;Compress=True;");
                 SQLite.Open();
             }
@@ -63,17 +63,20 @@ namespace Goose
                 query = "CREATE TABLE IF NOT EXISTS " + x.Table.Name.Underscore() + " (GooseID VARCHAR(1000) PRIMARY KEY" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) + ")";
                 command = SQLite.CreateCommand();
                 command.CommandText = query;
+                Console.WriteLine("[GooseDBMS] " + query);
                 command.ExecuteNonQuery();
 
                 x.Rows.ForEach(y =>
                 {
                     query = string.Join(", ", y.Cells.Select(z => z.Key.Underscore()));
                     query = "INSERT INTO " + x.Table.Name + " (GooseID" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) +
-                    ") VALUES ('" + y.RowID + "'" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + string.Join(", ", y.Cells.Select(z => "'" + z.Value + "'")))
+                    ") VALUES ('" + y.RowID + "'" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + string.Join(", ", y.Cells.Select(z => "@" + z.Key.Underscore())))
                     + ") ON CONFLICT(GooseID) DO NOTHING";
 
                     command = SQLite.CreateCommand();
                     command.CommandText = query;
+                    y.Cells.Select(z => new Tuple<string, string?>(z.Key, z.Value)).ToList().ForEach(z => command.Parameters.Add("@" + z.Item1.Underscore(), System.Data.DbType.String).Value = z.Item2);
+                    Console.WriteLine("[GooseDBMS] " + query);
                     command.ExecuteNonQuery();
                 });
             });

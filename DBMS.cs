@@ -18,18 +18,19 @@ namespace Goose
         protected static SQLiteConnection? SQLite { get; set; }
         protected GooseDB? GooseDB { get; set; }
 
-        public static UserCredential? Credential(string? clientSecretFilePath, string[] scopes)
+        public static UserCredential? Credential(string? clientSecretFilePath, string[] scopes, string credPath = "goosedbms_credentials.json")
         {
             if (clientSecretFilePath == null)
                 return null;
 
-            FileStream stream = new(clientSecretFilePath, FileMode.Open, FileAccess.Read);
-            string credPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-            credPath = Path.Combine(credPath, ".credentials/google-dotnet-quickstart.json");
-            Console.WriteLine("Credential file saved to: " + credPath);
-            UserCredential credential = GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.FromStream(stream).Secrets, scopes, "user", CancellationToken.None, new FileDataStore(credPath, true)).Result;
-            stream.Close();
-            stream.Dispose();
+            UserCredential? credential = null;
+            using (FileStream stream = new(clientSecretFilePath, FileMode.Open, FileAccess.Read))
+            {
+                credPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), Path.Combine(".credentials/", credPath));
+                Console.WriteLine("[GooseDBMS] Credential file saved to: " + credPath);
+                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.FromStream(stream).Secrets, scopes, "user", CancellationToken.None, new FileDataStore(credPath, true)).Result;
+            }
+
             return credential;
         }
 

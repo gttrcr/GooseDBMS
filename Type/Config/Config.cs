@@ -42,7 +42,7 @@ namespace Goose.Type.Config
 
                 FormsService formsService = new(new BaseClientService.Initializer()
                 {
-                    HttpClientInitializer = Goose.DBMS.Credential(clientSecretFilePath, new[] { FormsService.Scope.FormsBody, }),
+                    HttpClientInitializer = Goose.DBMS.Credential(clientSecretFilePath, new[] { FormsService.Scope.FormsBody }, "goosedbms_config_credential.json"),
                     ApplicationName = Assembly.GetExecutingAssembly().GetName().Name,
                 });
 
