@@ -1,13 +1,21 @@
 using System.Reflection;
-using Newtonsoft.Json;
-using Google.Apis.Forms.v1;
-using Google.Apis.Services;
-using Google.Apis.Forms.v1.Data;
 using System.Web;
 using System.Collections.Specialized;
+using Google.Apis.Forms.v1;
+using Google.Apis.Forms.v1.Data;
+using Newtonsoft.Json;
+using Google.Apis.Services;
 
 namespace Goose.Type.Config
 {
+    public struct GooseConfigEntry<T>
+    {
+        public string PrefilledUrl { get; set; }
+        public string FormID { get; set; }
+        public List<string> Export { get; set; }
+        public Dictionary<string, T> Dynamic { get; set; }
+    }
+
     public class Config
     {
         public string? ClientSecretFilePath { get; set; }
@@ -19,25 +27,21 @@ namespace Goose.Type.Config
             Tables = new();
         }
 
-        public static void CreateConfig(string configJson, string clientSecretFilePath, List<string> prefilledUrls, List<string> formIDs, List<List<string>> Exports)
+        public static void CreateConfig<T>(string configJson, string clientSecretFilePath, List<GooseConfigEntry<T>> gooseConfigEntries) //List<string> prefilledUrls, List<string> formIDs, List<List<string>> Exports)
         {
-            if (new List<int>() { prefilledUrls.Count, formIDs.Count, Exports.Count }.Distinct().Count() != 1)
-                throw new Exception("The number of prefilled urls (" + prefilledUrls.Count + "), formIDs (" + formIDs.Count + ") and Exports (" + Exports.Count + ") must be the same");
-
-            List<string> invalidUrl = prefilledUrls.Where(x => !Uri.TryCreate(x, UriKind.RelativeOrAbsolute, out Uri? uri)).ToList();
+            List<GooseConfigEntry<T>> invalidUrl = gooseConfigEntries.Where(x => !Uri.TryCreate(x.PrefilledUrl, UriKind.RelativeOrAbsolute, out Uri? uri)).ToList();
             if (invalidUrl.Count > 0)
-                throw new Exception("There are some invalid url: " + Environment.NewLine + string.Join(Environment.NewLine, invalidUrl));
-            List<Uri> prefilledUris = prefilledUrls.Select(x => new Uri(x)).ToList();
+                throw new Exception("There are some invalid url: " + Environment.NewLine + string.Join(Environment.NewLine, invalidUrl.Select(x => x.PrefilledUrl)));
 
             Config gooseConfig = new() { ClientSecretFilePath = clientSecretFilePath };
-
-            for (int i = 0; i < prefilledUris.Count; i++)
+            for (int i = 0; i < gooseConfigEntries.Count; i++)
             {
-                Uri uri = prefilledUris[i];
+                GooseConfigEntry<T> gooseConfigEntry = gooseConfigEntries[i];
                 Table table = new()
                 {
-                    PrefilledFormID = uri.Segments[4],
-                    FormID = formIDs[i]
+                    PrefilledFormID = new Uri(gooseConfigEntry.PrefilledUrl).Segments[4],
+                    FormID = gooseConfigEntry.FormID,
+                    Dynamic = gooseConfigEntry.Dynamic
                 };
 
                 FormsService formsService = new(new BaseClientService.Initializer()
@@ -49,12 +53,12 @@ namespace Goose.Type.Config
                 Form form = formsService.Forms.Get(table.FormID).Execute();
                 table.Name = form.Info.Title.Underscore();
 
-                NameValueCollection nvc = HttpUtility.ParseQueryString(uri.Query);
+                NameValueCollection nvc = HttpUtility.ParseQueryString(new Uri(gooseConfigEntry.PrefilledUrl).Query);
                 nvc.Remove("usp");
 
                 IList<Item> filteredByProperties = form.Items.Where(x => x.PageBreakItem == null && x.QuestionItem != null).ToList();
-                if (new List<int>() { nvc.Count, Exports[i].Count }.Distinct().Count() != 1)
-                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + ") and Exports in Exports (" + Exports[i].Count + ") must be the same");
+                if (new List<int>() { nvc.Count, gooseConfigEntry.Export.Count }.Distinct().Count() != 1)
+                    throw new Exception(form.Info.Title + ") The number of arguments in query string (" + nvc.Count + ") and Exports in Exports (" + gooseConfigEntry.Export.Count + ") must be the same");
 
                 for (int j = 0; j < nvc.Count; j++)
                 {
@@ -65,7 +69,7 @@ namespace Goose.Type.Config
                     else if (value == null)
                         throw new Exception("Value is null in the array of prefilled arguments");
                     else
-                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value.Underscore(), filteredByProperties[j].QuestionItem.Question.QuestionId, Exports[i][j]));
+                        table.Columns.Add(new(int.Parse(key.Split('.')[1]), value.Underscore(), filteredByProperties[j].QuestionItem.Question.QuestionId, gooseConfigEntry.Export[j]));
                 }
 
                 gooseConfig.Tables.Add(table);
