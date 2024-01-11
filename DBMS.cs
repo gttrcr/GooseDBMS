@@ -8,6 +8,7 @@ using Goose.Type.DBMS;
 using Goose.Type.Config;
 using System.Collections.Specialized;
 using System.Web;
+using System.Drawing;
 
 namespace Goose
 {
@@ -18,20 +19,57 @@ namespace Goose
         protected static SQLiteConnection? SQLite { get; set; }
         protected GooseDB? GooseDB { get; set; }
 
-        public static UserCredential? Credential(string? clientSecretFilePath, string[] scopes, string credPath = "goosedbms_credentials.json")
+        public static UserCredential? Credential(string? clientSecretFilePath, string[] scopes, string credPath, DBMS? dBMSinstance)
         {
             if (clientSecretFilePath == null)
                 return null;
+
+            if (!File.Exists(clientSecretFilePath))
+            {
+                if (dBMSinstance == null)
+                    Console.WriteLine("[GooseDBMS] ClientSecret at " + clientSecretFilePath + " was not found");
+                else
+                    dBMSinstance?.WriteLine("ClientSecret at " + clientSecretFilePath + " was not found", LogSeverity.Warn);
+
+                return null;
+            }
 
             UserCredential? credential = null;
             using (FileStream stream = new(clientSecretFilePath, FileMode.Open, FileAccess.Read))
             {
                 credPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), Path.Combine(".credentials/", credPath));
-                Console.WriteLine("[GooseDBMS] Credential file saved to: " + credPath);
+                if (dBMSinstance == null)
+                    Console.WriteLine("[GooseDBMS] Credential file saved to: " + credPath);
+                else
+                    dBMSinstance?.WriteLine("Credential file saved to: " + credPath, LogSeverity.Info);
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.FromStream(stream).Secrets, scopes, "user", CancellationToken.None, new FileDataStore(credPath, true)).Result;
             }
 
             return credential;
+        }
+
+        public void WriteLine(string? value, LogSeverity logSeverity)
+        {
+            if (logSeverity >= DBConfig.LogSeverity)
+            {
+                ConsoleColor color = Console.ForegroundColor;
+                switch (logSeverity)
+                {
+                    case LogSeverity.Info:
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        break;
+                    case LogSeverity.Warn:
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        break;
+                    case LogSeverity.Error:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        break;
+                }
+                
+                Console.WriteLine("[GooseDBMS] " + value);
+                
+                Console.ForegroundColor = color;
+            }
         }
 
         public DBMS(string configJson)

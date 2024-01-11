@@ -32,7 +32,7 @@ namespace Goose
                     {
                         FormsService.Scope.FormsResponsesReadonly,
                         FormsService.Scope.FormsBody
-                    }),
+                    }, "goosedbms_credentials.json", this),
                     ApplicationName = Assembly.GetExecutingAssembly().GetName().Name,
                 });
 
@@ -58,27 +58,41 @@ namespace Goose
 
             GooseDB?.Tables.ForEach(x =>
             {
-                SQLiteCommand command;
-                string query = string.Join(", ", x.Table.Columns.Select(y => y.Value + " VARCHAR(1000)"));
-                query = "CREATE TABLE IF NOT EXISTS " + x.Table.Name.Underscore() + " (GooseID VARCHAR(1000) PRIMARY KEY" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) + ")";
-                command = SQLite.CreateCommand();
-                command.CommandText = query;
-                Console.WriteLine("[GooseDBMS] " + query);
-                command.ExecuteNonQuery();
-
-                x.Rows.ForEach(y =>
+                try
                 {
-                    query = string.Join(", ", y.Cells.Select(z => z.Key.Underscore()));
-                    query = "INSERT INTO " + x.Table.Name + " (GooseID" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) +
-                    ") VALUES ('" + y.RowID + "'" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + string.Join(", ", y.Cells.Select(z => "@" + z.Key.Underscore())))
-                    + ") ON CONFLICT(GooseID) DO NOTHING";
-
+                    SQLiteCommand command;
+                    string query = string.Join(", ", x.Table.Columns.Select(y => y.Value + " VARCHAR(1000)"));
+                    query = "CREATE TABLE IF NOT EXISTS " + x.Table.Name.Underscore() + " (GooseID VARCHAR(1000) PRIMARY KEY" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) + ")";
                     command = SQLite.CreateCommand();
                     command.CommandText = query;
-                    y.Cells.Select(z => new Tuple<string, string?>(z.Key, z.Value)).ToList().ForEach(z => command.Parameters.Add("@" + z.Item1.Underscore(), System.Data.DbType.String).Value = z.Item2);
-                    Console.WriteLine("[GooseDBMS] " + query);
+                    WriteLine(query, LogSeverity.Info);
                     command.ExecuteNonQuery();
-                });
+
+                    x.Rows.ForEach(y =>
+                    {
+                        try
+                        {
+                            query = string.Join(", ", y.Cells.Select(z => z.Key.Underscore()));
+                            query = "INSERT INTO " + x.Table.Name + " (GooseID" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + query) +
+                            ") VALUES ('" + y.RowID + "'" + (string.IsNullOrEmpty(query) ? string.Empty : ", " + string.Join(", ", y.Cells.Select(z => "@" + z.Key.Underscore())))
+                            + ") ON CONFLICT(GooseID) DO NOTHING";
+
+                            command = SQLite.CreateCommand();
+                            command.CommandText = query;
+                            y.Cells.Select(z => new Tuple<string, string?>(z.Key, z.Value)).ToList().ForEach(z => command.Parameters.Add("@" + z.Item1.Underscore(), System.Data.DbType.String).Value = z.Item2);
+                            WriteLine(query, LogSeverity.Info);
+                            command.ExecuteNonQuery();
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteLine(ex.Message, LogSeverity.Error);
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    WriteLine(ex.Message, LogSeverity.Error);
+                }
             });
         }
 

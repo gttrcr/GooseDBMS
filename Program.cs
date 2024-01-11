@@ -30,7 +30,7 @@
 //                 // // user.Insert("GooseTable1", new List<string>() { "noooome", "cognomeee" });
 
 //                 Console.WriteLine("Importer: creating dynamic configuration");
-//                 List<GooseConfigEntry<string>> gooseConfigEntry = new()
+//                 List<GooseConfigEntry<string>> gooseConfigEntries = new()
 //                 {
 //                     new()
 //                     {
@@ -47,7 +47,7 @@
 //                         Dynamic = new(){{"Organization", "eth"}}
 //                     }
 //                 };
-//                 Config.CreateConfig("goose_eaziu.json", "client_secret.json", gooseConfigEntry);
+//                 Config.CreateConfig("goose_eaziu.json", "client_secret.json", gooseConfigEntries, LogSeverity.Info);
 //                 Console.WriteLine("Importer: dynamic configuration created");
 //                 Owner o = new("goose_eaziu.json");
 
@@ -55,7 +55,7 @@
 //             }
 //             catch (Exception ex)
 //             {
-//                 Console.WriteLine(ex.Message);
+//                 Console.WriteLine("Importer: " + ex.Message);
 //             }
 //         }
 //     }

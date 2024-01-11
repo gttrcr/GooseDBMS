@@ -21,13 +21,15 @@ namespace Goose.Type.Config
         public string? ClientSecretFilePath { get; set; }
         public string? ApiKey { get; set; }
         public List<Table> Tables { get; set; }
+        public LogSeverity LogSeverity { get; set; }
 
         public Config()
         {
+            LogSeverity = LogSeverity.Info;
             Tables = new();
         }
 
-        public static void CreateConfig<T>(string configJson, string clientSecretFilePath, List<GooseConfigEntry<T>> gooseConfigEntries) //List<string> prefilledUrls, List<string> formIDs, List<List<string>> Exports)
+        public static void CreateConfig<T>(string configJson, string clientSecretFilePath, List<GooseConfigEntry<T>> gooseConfigEntries, LogSeverity logSeverity)
         {
             List<GooseConfigEntry<T>> invalidUrl = gooseConfigEntries.Where(x => !Uri.TryCreate(x.PrefilledUrl, UriKind.RelativeOrAbsolute, out Uri? uri)).ToList();
             if (invalidUrl.Count > 0)
@@ -46,7 +48,7 @@ namespace Goose.Type.Config
 
                 FormsService formsService = new(new BaseClientService.Initializer()
                 {
-                    HttpClientInitializer = Goose.DBMS.Credential(clientSecretFilePath, new[] { FormsService.Scope.FormsBody }, "goosedbms_config_credential.json"),
+                    HttpClientInitializer = Goose.DBMS.Credential(clientSecretFilePath, new[] { FormsService.Scope.FormsBody }, "goosedbms_config_credential.json", null),
                     ApplicationName = Assembly.GetExecutingAssembly().GetName().Name,
                 });
 
@@ -75,6 +77,7 @@ namespace Goose.Type.Config
                 gooseConfig.Tables.Add(table);
             }
 
+            gooseConfig.LogSeverity = logSeverity;
             File.WriteAllText(configJson, JsonConvert.SerializeObject(gooseConfig, Formatting.Indented));
         }
     }
